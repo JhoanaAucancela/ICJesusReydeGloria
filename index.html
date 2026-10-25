@@ -401,6 +401,25 @@
     text-shadow:0 2px 10px rgba(0,0,0,0.5);
   }
   #projector-line.fade{opacity:0;}
+  /* Estilo "video lyrics": mayúsculas, banda translúcida por línea y cortina horizontal */
+  #projector-line .vl{text-transform:uppercase;letter-spacing:.14em;font-weight:700;padding:.06em .4em;
+    background:color-mix(in srgb, currentColor 17%, transparent);
+    -webkit-box-decoration-break:clone;box-decoration-break:clone;line-height:1.55;}
+  #projector-line.wipe-in{animation:cortinaEntra .55s cubic-bezier(.7,0,.2,1) both;}
+  #projector-line.wipe-out{animation:cortinaSale .28s cubic-bezier(.6,0,.9,.4) both;}
+  @keyframes cortinaEntra{from{clip-path:inset(0 100% 0 0);}to{clip-path:inset(0 0 0 0);}}
+  @keyframes cortinaSale{from{clip-path:inset(0 0 0 0);}to{clip-path:inset(0 0 0 100%);}}
+  /* Animaciones de la letra proyectada */
+  #projector-line.anim-suave{animation:lineaEntra .7s cubic-bezier(.2,.7,.2,1) both;}
+  @keyframes lineaEntra{from{opacity:0;transform:translateY(.45em) scale(.97);filter:blur(6px);}to{opacity:1;transform:none;filter:none;}}
+  #projector-line .w{display:inline-block;opacity:0;transform:translateY(.4em);filter:blur(5px);
+    animation:palabraEntra .55s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:calc(var(--i) * 85ms);}
+  @keyframes palabraEntra{to{opacity:1;transform:none;filter:none;}}
+  #projector-line.glow{text-shadow:0 0 .35em color-mix(in srgb, currentColor 60%, transparent), 0 2px 10px rgba(0,0,0,.5);
+    animation-name:resplandor;animation-duration:4.5s;animation-iteration-count:infinite;animation-timing-function:ease-in-out;}
+  #projector-line.glow.anim-suave{animation:lineaEntra .7s cubic-bezier(.2,.7,.2,1) both, resplandor 4.5s ease-in-out .7s infinite;}
+  @keyframes resplandor{0%,100%{text-shadow:0 0 .22em color-mix(in srgb, currentColor 45%, transparent), 0 2px 10px rgba(0,0,0,.5);}
+    50%{text-shadow:0 0 .5em color-mix(in srgb, currentColor 75%, transparent), 0 2px 10px rgba(0,0,0,.5);}}
   .projector-exit-hint{
     position:absolute;
     bottom:1.2rem;
@@ -1496,6 +1515,20 @@
       </div>
 
       <div style="margin-top:1rem;border-top:1px solid var(--line);padding-top:0.8rem;">
+        <label style="font-size:0.85rem;display:block;margin-bottom:0.4rem;">Animación de la letra (alabanzas)</label>
+        <select id="sel-animacion" onchange="aplicarEstiloProyeccion()" style="width:100%;padding:0.45rem;border-radius:8px;">
+          <option value="ninguna">Sin animación</option>
+          <option value="suave">Suave (aparece subiendo)</option>
+          <option value="palabras">Palabra por palabra</option>
+          <option value="video">Estilo video de letras (mayúsculas + cortina)</option>
+        </select>
+        <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.85rem;margin-top:0.6rem;cursor:pointer;">
+          <input type="checkbox" id="chk-resplandor" onchange="aplicarEstiloProyeccion()" style="accent-color:var(--accent);">
+          Resplandor suave en la letra
+        </label>
+      </div>
+
+      <div style="margin-top:1rem;border-top:1px solid var(--line);padding-top:0.8rem;">
         <label style="font-size:0.85rem;display:block;margin-bottom:0.5rem;">Imagen de fondo</label>
         <div id="fondo-preview-wrap" style="margin-bottom:0.6rem;">
           <div style="font-size:0.78rem;color:var(--ink-dim);line-height:1.4;">Sin imagen de fondo todavía. La proyección usa el color sólido de arriba.</div>
@@ -1572,13 +1605,18 @@ async function cargarCatalogoCompartido(){
   // Construimos la URL del JSON relativa al origen del sitio, para que funcione
   // tanto en GitHub Pages (https://usuario.github.io/repo/) como en localhost.
   const urlBase = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
-  const urlJson = urlBase + 'canciones.json';
+  // Orden de búsqueda: 1) misma carpeta que este archivo, 2) el repo original de alabanzas.
+  const urls = [urlBase + 'canciones.json', 'https://jhoanaaucancela.github.io/proyector-alabanzas/canciones.json'];
 
   try{
-    const resp = await fetch(urlJson, { cache: 'no-cache' });
-    if (!resp.ok) return; // archivo no encontrado todavía — es normal la primera vez
-
-    const data = await resp.json();
+    let data = null;
+    for (const u of urls){
+      try{
+        const resp = await fetch(u, { cache: 'no-cache' });
+        if (resp.ok){ data = await resp.json(); break; }
+      }catch(e){ /* probar la siguiente */ }
+    }
+    if (!data) return; // ninguna ubicación disponible
     const incoming = Array.isArray(data) ? data : data.canciones;
     if (!Array.isArray(incoming) || incoming.length === 0) return;
 
@@ -1740,17 +1778,37 @@ function manejarComandoWS(msg){
 function renderProjectorLine(text){
   document.getElementById('view-projector').setAttribute('data-modo', 'letra');
   const el = document.getElementById('projector-line');
-  el.classList.add('fade');
+  const esVideo = ANIM_LETRA.modo === 'video';
+  el.classList.remove('wipe-in');
+  if (esVideo){ void el.offsetWidth; el.classList.add('wipe-out'); } else el.classList.add('fade');
   setTimeout(() => {
+    el.classList.remove('anim-suave', 'wipe-out');
     if (text && text.trim()){
-      el.textContent = text;
+      if (esVideo){
+        el.textContent = '';
+        const s = document.createElement('span');
+        s.className = 'vl'; s.textContent = text.trim();
+        el.appendChild(s);
+        void el.offsetWidth; el.classList.add('wipe-in');
+      } else if (ANIM_LETRA.modo === 'palabras'){
+        el.textContent = '';
+        text.trim().split(/\s+/).forEach((w, i, arr) => {
+          const s = document.createElement('span');
+          s.className = 'w'; s.style.setProperty('--i', i); s.textContent = w;
+          el.appendChild(s);
+          if (i < arr.length - 1) el.appendChild(document.createTextNode(' '));
+        });
+      } else {
+        el.textContent = text;
+        if (ANIM_LETRA.modo === 'suave'){ void el.offsetWidth; el.classList.add('anim-suave'); }
+      }
       el.classList.remove('projector-empty');
     } else {
       el.textContent = 'Esperando canción…';
       el.classList.add('projector-empty');
     }
     el.classList.remove('fade');
-  }, 180);
+  }, esVideo ? 280 : 180);
 }
 function renderProjectorFromState(){
   const song = songs.find(s => s.id === currentSongId);
@@ -2736,8 +2794,12 @@ function manejarComandoWSBiblia(msg){
     buscarPorCita();
   }
 }
+let ANIM_LETRA = { modo: 'suave', glow: false };
 function aplicarEstiloEnProyector(estilo){
   if (!estilo) return;
+  ANIM_LETRA.modo = estilo.anim || 'suave';
+  ANIM_LETRA.glow = !!estilo.glow;
+  document.getElementById('projector-line').classList.toggle('glow', ANIM_LETRA.glow);
   const projectorView = document.getElementById('view-projector');
   const bgImageEl = document.getElementById('projector-bg-image');
   const overlayEl = document.getElementById('projector-overlay');
@@ -2774,7 +2836,7 @@ function aplicarEstiloEnProyector(estilo){
    ========================================================================= */
 const STYLE_STORAGE_KEY = 'proyector_estilo_v1';
 const STYLE_KEYS_ANTIGUAS = ['versiculos_estilo_v1', 'alabanzas_estilo_v1'];
-const ESTILO_POR_DEFECTO = { bgColor: '#161311', textColor: '#f3eade', fontScale: 1, bgImage: null, overlayOpacity: 0.45 };
+const ESTILO_POR_DEFECTO = { bgColor: '#161311', textColor: '#f3eade', fontScale: 1, bgImage: null, overlayOpacity: 0.45, anim: 'suave', glow: false };
 
 const PRESETS_COLOR = [
   { bg:'#161311', text:'#f3eade', nombre:'Cálido oscuro (por defecto)' },
@@ -2820,6 +2882,8 @@ function estiloActualDesdeControles(){
     fontScale: escalaEl ? parseFloat(escalaEl.value) : previo.fontScale,
     overlayOpacity: overlayEl ? parseFloat(overlayEl.value) : previo.overlayOpacity,
     bgImage: previo.bgImage,
+    anim: (document.getElementById('sel-animacion') || {}).value || previo.anim || 'suave',
+    glow: document.getElementById('chk-resplandor') ? document.getElementById('chk-resplandor').checked : !!previo.glow,
   };
 }
 
@@ -2949,6 +3013,8 @@ function inicializarControlesDeEstilo(){
     overlayEl.value = overlayVal;
     document.getElementById('valor-oscurecer').textContent = Math.round(overlayVal * 100) + '%';
   }
+  const selAn = document.getElementById('sel-animacion'); if (selAn) selAn.value = guardado.anim || 'suave';
+  const chkGl = document.getElementById('chk-resplandor'); if (chkGl) chkGl.checked = !!guardado.glow;
   actualizarVistaPreviaFondo(guardado);
   renderPresets();
 }
