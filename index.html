@@ -2780,7 +2780,7 @@ function renderMainAl(){
   document.getElementById('footer-song-name').textContent = song ? song.title : '';
 
   if (!song){
-    main.innerHTML = `
+    main.innerHTML = htmlBarraAmbiente() + `
       <div class="no-song-msg">
         <h2>Selecciona o añade una canción</h2>
         <p>Elige una canción de la lista a la izquierda para empezar a proyectar.</p>
