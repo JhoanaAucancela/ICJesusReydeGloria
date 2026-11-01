@@ -1250,6 +1250,51 @@
     letter-spacing:normal;
     margin-top:0;
   }
+
+  /* ===================== MEDIOS (imágenes y videos por link) ===================== */
+  #view-operator:not([data-tab="alabanzas"]) .pane-al,
+  #view-operator:not([data-tab="alabanzas"]) .only-al{display:none !important;}
+  #view-operator:not([data-tab="biblia"]) .pane-bi{display:none !important;}
+  #view-operator:not([data-tab="medios"]) .pane-me{display:none !important;}
+  #view-operator[data-tab="medios"]{grid-template-columns:360px 1fr;}
+  .op-sidebar select{appearance:auto;}
+  .me-hint{font-size:0.74rem;color:var(--ink-dim);line-height:1.45;}
+  .me-hint code{background:var(--bg-deep);padding:0 .25rem;border-radius:4px;font-size:.72rem;}
+  .me-list{display:flex;flex-direction:column;gap:0.35rem;}
+  .me-item{display:flex;align-items:center;gap:0.55rem;padding:0.4rem;border-radius:8px;border:1px solid transparent;cursor:pointer;}
+  .me-item:hover{background:var(--bg-panel-raised);}
+  .me-item.sel{border-color:var(--line);background:var(--bg-panel-raised);}
+  .me-item.activo{border-color:var(--accent);}
+  .me-thumb{width:64px;height:40px;flex:none;border-radius:5px;background:#000 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--ink-dim);overflow:hidden;}
+  .me-info{flex:1;min-width:0;}
+  .me-tit{font-size:0.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .me-badge{display:inline-block;font-size:0.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-dim);border:1px solid var(--line);border-radius:4px;padding:0 .3rem;margin-right:.25rem;}
+  .me-item.activo .me-badge.live{color:var(--accent);border-color:var(--accent);}
+  .me-acc{display:flex;gap:0.15rem;}
+  .me-acc button{background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:0.85rem;padding:0.15rem 0.3rem;border-radius:5px;}
+  .me-acc button:hover{color:var(--ink-warm);background:var(--bg-deep);}
+  .me-acc button.danger:hover{color:#e0584a;}
+  .me-card{background:var(--bg-panel);border:1px solid var(--line);border-radius:14px;padding:1.2rem 1.4rem;}
+  .me-card.live{border-color:var(--accent);}
+  .me-card .label{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-dim);margin-bottom:0.6rem;}
+  .me-card h3{font-family:var(--font-display);margin:0 0 0.6rem;font-size:1.25rem;}
+  .me-prev{width:100%;max-height:42vh;aspect-ratio:16/9;background:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .me-prev img,.me-prev video,.me-prev iframe{width:100%;height:100%;object-fit:contain;border:0;}
+  .me-row{display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-top:0.8rem;}
+  .me-row label{font-size:0.82rem;color:var(--ink-dim);display:flex;align-items:center;gap:0.35rem;cursor:pointer;}
+  .me-row select{background:var(--bg-deep);color:var(--ink-warm);border:1px solid var(--line);border-radius:6px;padding:0.3rem;}
+  .me-seek{flex:1;min-width:160px;accent-color:var(--accent);}
+  .me-time{font-family:ui-monospace,monospace;font-size:0.8rem;color:var(--ink-dim);min-width:92px;text-align:right;}
+  .me-aviso{margin-top:0.7rem;font-size:0.8rem;color:#f0c75e;line-height:1.4;}
+  .me-aviso:empty{display:none;}
+  .me-url{font-size:0.72rem;color:var(--ink-dim);word-break:break-all;margin-top:0.4rem;}
+
+  #projector-media{position:absolute;inset:0;z-index:3;display:none;background:#000;}
+  #view-projector[data-modo="medio"] #projector-media{display:block;}
+  #projector-media .medio-el{position:absolute;inset:0;width:100%;height:100%;object-fit:var(--ajuste,contain);border:0;display:block;animation:medioEntra .35s ease both;}
+  @keyframes medioEntra{from{opacity:0;}to{opacity:1;}}
+  #medio-hint{position:absolute;left:50%;bottom:5vh;transform:translateX(-50%);z-index:4;background:rgba(0,0,0,.75);color:#fff;
+    padding:.7rem 1.2rem;border-radius:10px;font:600 1rem var(--font-body);display:none;cursor:pointer;border:1px solid #c98a3a;}
 </style>
 </head>
 
@@ -1283,6 +1328,7 @@
     <div class="main-tabs">
       <button class="main-tab active" id="maintab-alabanzas" onclick="cambiarPestana('alabanzas')">Alabanzas</button>
       <button class="main-tab" id="maintab-biblia" onclick="cambiarPestana('biblia')">Biblia</button>
+      <button class="main-tab" id="maintab-medios" onclick="cambiarPestana('medios')">Medios</button>
     </div>
     <div class="header-actions">
       <button class="btn only-al" onclick="openSetlistModal()">Lista de hoy</button>
@@ -1368,6 +1414,52 @@
     </div>
     <div id="footer-ref" style="color:var(--ink-warm);font-weight:600;"></div>
   </div>
+
+  <!-- ===== Pestaña Medios (imágenes y videos por link) ===== -->
+  <div class="op-sidebar pane-me">
+    <div class="search-form" style="display:flex;flex-direction:column;gap:0.6rem;">
+      <div>
+        <label class="field-label">Link de la imagen o video</label>
+        <input type="text" id="me-url" placeholder="Pega aquí el link (GitHub, Drive, YouTube…)">
+      </div>
+      <div>
+        <label class="field-label">Título — opcional</label>
+        <input type="text" id="me-titulo" placeholder="Ej. Anuncio retiro de jóvenes">
+      </div>
+      <div>
+        <label class="field-label">Tipo</label>
+        <select id="me-tipo">
+          <option value="auto">Detectar solo</option>
+          <option value="imagen">Imagen</option>
+          <option value="video">Video</option>
+        </select>
+      </div>
+      <button class="btn primary" onclick="agregarMedio()">+ Añadir a la lista</button>
+      <div class="me-hint">
+        Sirven: archivos del repo (<code>medios/anuncio.jpg</code>), links de GitHub, Google Drive (compartido como "cualquier persona con el enlace"), YouTube, Dropbox o cualquier link directo .jpg .png .gif .webp .mp4 .webm.
+        En Drive el tipo no se detecta solo: si es un video, elige <b>Video</b>.
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.5rem;">
+        <h3 style="margin:0;font-size:0.95rem;">Lista de medios <span id="me-count" style="color:var(--ink-dim);font-weight:400;"></span></h3>
+        <button class="link-btn" onclick="exportarMedios()" title="Descarga medios.json para subirlo al repo">Exportar</button>
+      </div>
+      <div class="me-list" id="me-list"></div>
+    </div>
+  </div>
+
+  <div class="op-main pane-me" id="op-main-me"></div>
+  <div class="op-footer pane-me">
+    <div>
+      <span class="kbd">←</span>/<span class="kbd">→</span> medio anterior / siguiente (lo proyecta) &nbsp;·&nbsp;
+      <span class="kbd">␣</span> reproducir / pausar &nbsp;·&nbsp;
+      <span class="kbd">Q</span> quitar de pantalla &nbsp;·&nbsp;
+      <span class="kbd">B</span> pantalla negra
+    </div>
+    <div id="footer-medio" style="color:var(--ink-warm);font-weight:600;"></div>
+  </div>
 </div>
 
 <!-- ===================== PROYECCIÓN ===================== -->
@@ -1377,6 +1469,8 @@
   <div id="projector-line" class="projector-empty">Esperando…</div>
   <div id="projector-text" class="projector-empty">Esperando versículo…</div>
   <div id="projector-ref"></div>
+  <div id="projector-media"></div>
+  <div id="medio-hint">Haz clic aquí una vez para habilitar el sonido</div>
   <div id="projector-black"></div>
   <div class="projector-exit-hint">Esc para salir</div>
 </div>
@@ -1686,8 +1780,10 @@ function mostrarIndicadorCarga(visible){
    COMUNICACIÓN OPERADOR -> PROYECCIÓN (BroadcastChannel, misma máquina)
    ========================================================================= */
 function broadcastLine(text){
-  if (text && text.trim()) liberarNegro();
-  ultimaProyeccion = { type:'line', text };
+  const hayTexto = !!(text && text.trim());
+  if (hayTexto) liberarNegro();
+  if (hayTexto && medioActivoId){ medioActivoId = null; medioEstado = null; if (tabActual === 'medios') renderMedios(); }
+  if (hayTexto || !ultimaProyeccion || ultimaProyeccion.type !== 'media') ultimaProyeccion = { type:'line', text };
   getChannel().postMessage({ type:'line', text });
   // Notificar al servidor WebSocket para sincronizar controles móviles
   wsSendEstado();
@@ -1738,6 +1834,7 @@ function wsSendEstado(){
   }));
 }
 function manejarComandoWS(msg){
+  if (msg.tipo === 'medios-nav'){ manejarComandoWSMedios(msg); return; }
   if (msg.tipo !== 'alabanzas-nav') return;
   if (msg.accion !== 'pantalla-negra' && operadorActivo()) cambiarPestana('alabanzas');
   switch(msg.accion){
@@ -1776,8 +1873,18 @@ function manejarComandoWS(msg){
 
 
 function renderProjectorLine(text){
-  document.getElementById('view-projector').setAttribute('data-modo', 'letra');
+  const vistaP = document.getElementById('view-projector');
   const el = document.getElementById('projector-line');
+  if (vistaP.getAttribute('data-modo') === 'medio'){
+    if (!(text && text.trim())){
+      // Elegir otra canción manda una línea vacía: no debe cortar el video/imagen en pantalla
+      modoPrevioProyector = 'letra';
+      el.textContent = 'Esperando canción…'; el.classList.add('projector-empty');
+      return;
+    }
+    limpiarMedioProyector();
+  }
+  vistaP.setAttribute('data-modo', 'letra');
   const esVideo = ANIM_LETRA.modo === 'video';
   el.classList.remove('wipe-in');
   if (esVideo){ void el.offsetWidth; el.classList.add('wipe-out'); } else el.classList.add('fade');
@@ -2740,6 +2847,7 @@ function getChannel(){
 }
 function broadcastVerse(text, ref){
   if (text && text.trim()) liberarNegro();
+  if (medioActivoId){ medioActivoId = null; medioEstado = null; if (tabActual === 'medios') renderMedios(); }
   ultimaProyeccion = { type:'verse', text, ref };
   getChannel().postMessage({ type:'verse', text, ref });
   wsSendEstadoBiblia(text, ref);
@@ -3019,6 +3127,7 @@ function inicializarControlesDeEstilo(){
   renderPresets();
 }
 function renderProjectorVerse(text, ref){
+  if (document.getElementById('view-projector').getAttribute('data-modo') === 'medio') limpiarMedioProyector();
   document.getElementById('view-projector').setAttribute('data-modo', 'verso');
   const textEl = document.getElementById('projector-text');
   const refEl = document.getElementById('projector-ref');
@@ -3593,8 +3702,484 @@ document.addEventListener('DOMContentLoaded', () => {
   if (palInput) palInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') buscarPorPalabra(1);
   });
+  ['me-url','me-titulo'].forEach(id => { const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') agregarMedio(); }); });
 });
 
+
+
+/* =========================================================================
+   MEDIOS: imágenes y videos por link
+   La lista se guarda en este navegador (localStorage) y además se combina
+   con medios.json del repo, si existe (misma carpeta que este archivo).
+   Formato de medios.json: [{"titulo":"Anuncio","url":"medios/anuncio.jpg","tipo":"imagen"}]
+   tipo: "auto" | "imagen" | "video"
+   ========================================================================= */
+const MEDIOS_KEY = 'proyector_medios_v1';
+const MEDIOS_OPTS_KEY = 'proyector_medios_opts_v1';
+let medios = [];            // [{id, titulo, url, tipo, origen:'local'|'repo'}]
+let medioSelId = null;      // seleccionado en el panel (vista previa)
+let medioActivoId = null;   // el que está en la proyección
+let medioOpts = { ajuste:'contain', loop:false, mute:false, volumen:1 };
+let medioEstado = null;     // estado que reporta la proyección {t,d,paused,muted,aviso,error}
+let medioArrastrando = false;
+
+function loadMedios(){
+  try{ medios = JSON.parse(localStorage.getItem(MEDIOS_KEY) || '[]'); }catch(e){ medios = []; }
+  if (!Array.isArray(medios)) medios = [];
+  try{ const o = JSON.parse(localStorage.getItem(MEDIOS_OPTS_KEY) || 'null'); if (o) medioOpts = { ...medioOpts, ...o }; }catch(e){}
+}
+function saveMedios(){
+  try{
+    localStorage.setItem(MEDIOS_KEY, JSON.stringify(medios));
+    localStorage.setItem(MEDIOS_OPTS_KEY, JSON.stringify(medioOpts));
+  }catch(e){}
+}
+
+async function cargarMediosRepo(){
+  const urlBase = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+  try{
+    const r = await fetch(urlBase + 'medios.json', { cache:'no-cache' });
+    if (!r.ok) return;
+    const data = await r.json();
+    const lista = Array.isArray(data) ? data : data.medios;
+    if (!Array.isArray(lista)) return;
+    const urls = new Set(medios.map(m => m.url));
+    let n = 0;
+    for (const x of lista){
+      if (!x || !x.url || urls.has(x.url)) continue;
+      medios.push({ id:'m' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        titulo: x.titulo || tituloDesdeUrl(x.url), url: x.url, tipo: x.tipo || 'auto', origen:'repo' });
+      urls.add(x.url); n++;
+    }
+    if (n){ saveMedios(); if (tabActual === 'medios') renderMedios(); }
+  }catch(e){ /* sin medios.json: no pasa nada */ }
+}
+
+function tituloDesdeUrl(u){
+  if (/youtube\.com|youtu\.be/.test(u)) return 'Video de YouTube';
+  if (/(?:drive|docs)\.google\.com/.test(u)) return 'Archivo de Drive';
+  try{
+    const limpio = u.split(/[?#]/)[0].replace(/\/+$/, '');
+    const nombre = decodeURIComponent(limpio.split('/').pop() || '');
+    return nombre.replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[-_]+/g, ' ').trim() || 'Medio sin título';
+  }catch(e){ return 'Medio sin título'; }
+}
+
+/* ---- Convierte el link pegado en algo que el navegador pueda mostrar ---- */
+const EXT_IMG = ['jpg','jpeg','png','gif','webp','avif','bmp','svg'];
+const EXT_VID = ['mp4','webm','mov','m4v','ogv'];
+function resolverMedio(urlOriginal, tipo){
+  let url = (urlOriginal || '').trim();
+  const ext = ((url.split(/[?#]/)[0].match(/\.([a-z0-9]{2,5})$/i) || [])[1] || '').toLowerCase();
+
+  // YouTube (watch, youtu.be, shorts, live, embed)
+  let m = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+  if (m){
+    const t = (url.match(/[?&](?:t|start)=(\d+)/) || [])[1];
+    return { kind:'youtube', ytId:m[1], inicio: t ? +t : 0, thumb:`https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`, nombre:'YouTube' };
+  }
+  // Google Drive
+  if (/(?:drive|docs)\.google\.com/.test(url)){
+    const id = (url.match(/\/d\/([\w-]{20,})/) || url.match(/[?&]id=([\w-]{20,})/) || [])[1];
+    if (id){
+      const thumb = `https://drive.google.com/thumbnail?id=${id}&sz=w400`;
+      if (tipo === 'video') return { kind:'iframe', src:`https://drive.google.com/file/d/${id}/preview`, thumb, nombre:'Video de Drive' };
+      return { kind:'img', src:`https://drive.google.com/thumbnail?id=${id}&sz=w1920`, thumb, nombre:'Imagen de Drive' };
+    }
+  }
+  // Dropbox: forzar descarga directa
+  if (/dropbox\.com/.test(url)){
+    try{ const u = new URL(url); u.searchParams.delete('dl'); u.searchParams.set('raw', '1'); url = u.toString(); }catch(e){}
+  }
+  // GitHub: link de "blob" -> archivo crudo
+  m = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+  if (m) url = `https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3].split('?')[0]}`;
+
+  const esVideo = tipo === 'video' || (tipo !== 'imagen' && EXT_VID.includes(ext));
+  if (esVideo) return { kind:'video', src:url, thumb:null, nombre:'Video' };
+  return { kind:'img', src:url, thumb:url, nombre:'Imagen' };
+}
+
+/* ---- Lista (operador) ---- */
+function agregarMedio(){
+  const urlEl = document.getElementById('me-url');
+  const titEl = document.getElementById('me-titulo');
+  const tipoEl = document.getElementById('me-tipo');
+  const url = urlEl.value.trim();
+  if (!url){ urlEl.focus(); return; }
+  if (medios.some(m => m.url === url)){ alert('Ese link ya está en la lista.'); return; }
+  const item = { id:'m' + Date.now(), titulo: titEl.value.trim() || tituloDesdeUrl(url), url, tipo: tipoEl.value, origen:'local' };
+  medios.push(item);
+  saveMedios();
+  urlEl.value = ''; titEl.value = ''; tipoEl.value = 'auto';
+  medioSelId = item.id;
+  renderMedios();
+}
+function eliminarMedio(id, ev){
+  if (ev) ev.stopPropagation();
+  const it = medios.find(m => m.id === id);
+  if (!it) return;
+  if (!confirm(`¿Quitar "${it.titulo}" de la lista?`)) return;
+  if (medioActivoId === id) quitarMedio();
+  medios = medios.filter(m => m.id !== id);
+  if (medioSelId === id) medioSelId = null;
+  saveMedios();
+  renderMedios();
+}
+function moverMedio(id, delta, ev){
+  if (ev) ev.stopPropagation();
+  const i = medios.findIndex(m => m.id === id), j = i + delta;
+  if (i < 0 || j < 0 || j >= medios.length) return;
+  [medios[i], medios[j]] = [medios[j], medios[i]];
+  saveMedios();
+  renderMedios();
+}
+function seleccionarMedio(id){ medioSelId = id; renderMedios(); }
+
+function exportarMedios(){
+  if (!medios.length){ alert('La lista de medios está vacía.'); return; }
+  const data = medios.map(m => ({ titulo:m.titulo, url:m.url, tipo:m.tipo }));
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'medios.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ---- Envío a la proyección ---- */
+function proyectarMedio(id){
+  const it = medios.find(m => m.id === id);
+  if (!it) return;
+  liberarNegro();
+  medioActivoId = id; medioSelId = id; medioEstado = null;
+  const msg = { type:'media', item:{ id:it.id, titulo:it.titulo, url:it.url, tipo:it.tipo }, opts:{ ...medioOpts } };
+  ultimaProyeccion = msg;
+  getChannel().postMessage(msg);
+  renderMedios();
+}
+function quitarMedio(){
+  medioActivoId = null; medioEstado = null;
+  getChannel().postMessage({ type:'media', item:null });
+  if (ultimaProyeccion && ultimaProyeccion.type === 'media') ultimaProyeccion = null;
+  if (tabActual === 'medios') renderMedios();
+}
+function ctlMedio(accion, valor){ getChannel().postMessage({ type:'media-ctl', accion, valor }); }
+function pasoMedio(delta){
+  if (!medios.length) return;
+  const base = medioActivoId || medioSelId;
+  let i = medios.findIndex(m => m.id === base);
+  i = (i < 0) ? (delta > 0 ? 0 : medios.length - 1) : Math.max(0, Math.min(medios.length - 1, i + delta));
+  proyectarMedio(medios[i].id);
+}
+function cambiarOpcionMedio(clave, valor){
+  medioOpts[clave] = valor;
+  saveMedios();
+  ctlMedio(clave, valor);
+}
+
+/* ---- Render del panel ---- */
+function escAttr(s){ return escapeHtml(String(s)).replace(/"/g, '&quot;'); }
+function fmtTiempo(s){
+  if (!isFinite(s) || s < 0) s = 0;
+  s = Math.floor(s);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return (h ? h + ':' + String(m).padStart(2,'0') : m) + ':' + String(x).padStart(2,'0');
+}
+function renderMedios(){
+  const lista = document.getElementById('me-list');
+  if (!lista) return;
+  document.getElementById('me-count').textContent = medios.length ? `(${medios.length})` : '';
+  lista.innerHTML = medios.length ? medios.map((m, i) => {
+    const r = resolverMedio(m.url, m.tipo);
+    const esVid = r.kind !== 'img';
+    const thumb = r.thumb ? `style="background-image:url('${escAttr(r.thumb.replace(/['"()\\\s]/g, c => encodeURIComponent(c)))}')"` : '';
+    return `
+      <div class="me-item ${m.id === medioSelId ? 'sel' : ''} ${m.id === medioActivoId ? 'activo' : ''}"
+           onclick="seleccionarMedio('${m.id}')" ondblclick="proyectarMedio('${m.id}')" title="Doble clic para proyectar">
+        <div class="me-thumb" ${thumb}>${r.thumb ? '' : '🎬'}</div>
+        <div class="me-info">
+          <div class="me-tit">${escapeHtml(m.titulo)}</div>
+          <div>
+            ${m.id === medioActivoId ? '<span class="me-badge live">En pantalla</span>' : ''}
+            <span class="me-badge">${esVid ? 'video' : 'imagen'}</span>
+            ${m.origen === 'repo' ? '<span class="me-badge">medios.json</span>' : ''}
+          </div>
+        </div>
+        <div class="me-acc">
+          <button onclick="event.stopPropagation(); proyectarMedio('${m.id}')" title="Proyectar">▶</button>
+          <button onclick="moverMedio('${m.id}', -1, event)" title="Subir" ${i === 0 ? 'disabled' : ''}>↑</button>
+          <button onclick="moverMedio('${m.id}', 1, event)" title="Bajar" ${i === medios.length - 1 ? 'disabled' : ''}>↓</button>
+          <button class="danger" onclick="eliminarMedio('${m.id}', event)" title="Quitar de la lista">✕</button>
+        </div>
+      </div>`;
+  }).join('') : '<div class="me-hint">Todavía no hay medios. Pega un link arriba.</div>';
+
+  renderMainMe();
+}
+
+function renderMainMe(){
+  const main = document.getElementById('op-main-me');
+  if (!main) return;
+  const activo = medios.find(m => m.id === medioActivoId);
+  const sel = medios.find(m => m.id === medioSelId);
+  document.getElementById('footer-medio').textContent = activo ? '▶ ' + activo.titulo : '';
+
+  let html = '';
+
+  // Tarjeta "En pantalla" con controles
+  if (activo){
+    const r = resolverMedio(activo.url, activo.tipo);
+    const controlable = r.kind === 'video' || r.kind === 'youtube';
+    html += `
+      <div class="me-card live">
+        <div class="label">En pantalla ahora · ${escapeHtml(r.nombre)}</div>
+        <h3>${escapeHtml(activo.titulo)}</h3>
+        ${controlable ? `
+          <div class="me-row">
+            <button class="btn primary" id="me-btn-play" onclick="ctlMedio('toggle')">❚❚ Pausar</button>
+            <button class="btn" onclick="ctlMedio('restart')">⟲ Desde el inicio</button>
+            <input type="range" class="me-seek" id="me-seek" min="0" max="100" step="0.1" value="0"
+                   onpointerdown="medioArrastrando=true" onpointerup="medioArrastrando=false"
+                   onchange="medioArrastrando=false; ctlMedio('seek', parseFloat(this.value))">
+            <span class="me-time" id="me-time">0:00 / 0:00</span>
+          </div>
+          <div class="me-row">
+            <label><input type="checkbox" ${medioOpts.mute ? 'checked' : ''} onchange="cambiarOpcionMedio('mute', this.checked)"> Silenciar</label>
+            <label>Volumen <input type="range" min="0" max="1" step="0.05" value="${medioOpts.volumen}" style="accent-color:var(--accent);"
+                   oninput="cambiarOpcionMedio('volumen', parseFloat(this.value))"></label>
+            <label><input type="checkbox" ${medioOpts.loop ? 'checked' : ''} onchange="cambiarOpcionMedio('loop', this.checked)"> Repetir en bucle</label>
+          </div>` : (r.kind === 'iframe' ? `
+          <div class="me-hint">Los videos de Drive solo se controlan desde su propio reproductor (en la ventana de proyección). Para poder pausar o adelantar desde aquí, súbelo al repo o a YouTube.</div>` : '')}
+        <div class="me-row">
+          ${r.kind !== 'iframe' && r.kind !== 'youtube' ? `
+          <label>Encuadre
+            <select onchange="cambiarOpcionMedio('ajuste', this.value)">
+              <option value="contain" ${medioOpts.ajuste === 'contain' ? 'selected' : ''}>Completo (sin recortar)</option>
+              <option value="cover" ${medioOpts.ajuste === 'cover' ? 'selected' : ''}>Llenar pantalla (recorta bordes)</option>
+            </select>
+          </label>` : ''}
+          <button class="btn" onclick="quitarMedio()">Quitar de pantalla (Q)</button>
+        </div>
+        <div class="me-aviso" id="me-aviso"></div>
+      </div>`;
+  }
+
+  // Tarjeta de vista previa del seleccionado
+  if (sel && sel.id !== medioActivoId){
+    const r = resolverMedio(sel.url, sel.tipo);
+    let prev;
+    if (r.kind === 'img') prev = `<img src="${escAttr(r.src)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'me-hint',textContent:'No se pudo cargar la imagen. Revisa que el link sea público.'}))">`;
+    else if (r.kind === 'video') prev = `<video src="${escAttr(r.src)}#t=1" muted preload="metadata" controls></video>`;
+    else prev = `<img src="${escAttr(r.thumb)}" alt="">`;
+    html += `
+      <div class="me-card">
+        <div class="label">Vista previa (no se ve en la proyección) · ${escapeHtml(r.nombre)}</div>
+        <h3>${escapeHtml(sel.titulo)}</h3>
+        <div class="me-prev">${prev}</div>
+        <div class="me-url">${escapeHtml(sel.url)}</div>
+        <div class="me-row">
+          <button class="btn primary" onclick="proyectarMedio('${sel.id}')">Proyectar ahora →</button>
+        </div>
+      </div>`;
+  }
+
+  if (!html){
+    html = `
+      <div class="no-verse-msg">
+        <h2>Imágenes y videos</h2>
+        <p>Pega un link a la izquierda, elige un medio y pulsa ▶ (o doble clic) para proyectarlo.
+        Al proyectar una letra o un versículo, el medio se quita solo.</p>
+      </div>`;
+  }
+  main.innerHTML = html;
+  actualizarEstadoMedioOperador();
+}
+
+// Actualiza solo la barra de progreso y el botón, sin redibujar todo el panel
+function actualizarEstadoMedioOperador(){
+  const e = medioEstado;
+  const aviso = document.getElementById('me-aviso');
+  if (aviso) aviso.textContent = e ? (e.error || e.aviso || '') : '';
+  if (!e) return;
+  const btn = document.getElementById('me-btn-play');
+  if (btn) btn.textContent = e.paused ? '▶ Reproducir' : '❚❚ Pausar';
+  const seek = document.getElementById('me-seek');
+  if (seek && !medioArrastrando && e.d > 0){ seek.max = e.d; seek.value = e.t; }
+  const tm = document.getElementById('me-time');
+  if (tm) tm.textContent = `${fmtTiempo(e.t)} / ${fmtTiempo(e.d)}`;
+}
+
+/* =========================================================================
+   MEDIOS EN LA VENTANA DE PROYECCIÓN
+   ========================================================================= */
+let modoPrevioProyector = 'letra';
+let medioProy = null;          // {item, opts, kind, el}
+let medioProyTimer = null;
+let ytInfo = {};
+let proyActivado = false;      // la ventana de proyección ya recibió un clic (permite sonido)
+
+function reportarMedio(extra){
+  if (!medioProy) return;
+  const st = { type:'media-status', id: medioProy.item.id, t:0, d:0, paused:true, ...extra };
+  const el = medioProy.el;
+  if (medioProy.kind === 'video' && el){
+    st.t = el.currentTime || 0; st.d = el.duration || 0; st.paused = el.paused; st.muted = el.muted;
+  } else if (medioProy.kind === 'youtube'){
+    st.t = ytInfo.currentTime || 0; st.d = ytInfo.duration || 0; st.paused = ytInfo.playerState !== 1;
+  }
+  if (medioProy.aviso && !st.aviso) st.aviso = medioProy.aviso;
+  getChannel().postMessage(st);
+}
+
+function limpiarMedioProyector(){
+  clearInterval(medioProyTimer); medioProyTimer = null;
+  const cont = document.getElementById('projector-media');
+  if (medioProy && medioProy.el && medioProy.kind === 'video'){
+    try{ medioProy.el.pause(); medioProy.el.removeAttribute('src'); medioProy.el.load(); }catch(e){}
+  }
+  medioProy = null; ytInfo = {};
+  if (cont) cont.innerHTML = '';
+  const hint = document.getElementById('medio-hint'); if (hint) hint.style.display = 'none';
+}
+
+function ytCmd(func, args){
+  if (!medioProy || medioProy.kind !== 'youtube' || !medioProy.el.contentWindow) return;
+  medioProy.el.contentWindow.postMessage(JSON.stringify({ event:'command', func, args: args || [] }), '*');
+}
+
+function mostrarHintSonido(){
+  if (proyActivado) return;
+  const hint = document.getElementById('medio-hint');
+  if (hint) hint.style.display = 'block';
+}
+
+function renderProjectorMedia(item, opts){
+  const view = document.getElementById('view-projector');
+  const cont = document.getElementById('projector-media');
+  limpiarMedioProyector();
+  if (!item){ view.setAttribute('data-modo', modoPrevioProyector); return; }
+  const actual = view.getAttribute('data-modo');
+  if (actual !== 'medio') modoPrevioProyector = actual;
+  opts = { ajuste:'contain', loop:false, mute:false, volumen:1, ...(opts || {}) };
+  cont.style.setProperty('--ajuste', opts.ajuste);
+
+  const r = resolverMedio(item.url, item.tipo);
+  let el;
+  if (r.kind === 'img'){
+    el = new Image();
+    el.onerror = () => reportarMedio({ error:'No se pudo cargar la imagen. Revisa que el link sea público y directo.' });
+    el.src = r.src;
+  } else if (r.kind === 'video'){
+    el = document.createElement('video');
+    el.playsInline = true; el.preload = 'auto';
+    el.loop = !!opts.loop; el.muted = !!opts.mute; el.volume = opts.volumen;
+    el.onerror = () => reportarMedio({ error:'No se pudo reproducir el video. Usa .mp4 (H.264) o .webm y un link directo y público.' });
+    el.onended = () => reportarMedio({});
+    el.src = r.src;
+    el.play().catch(() => {
+      // El navegador bloqueó el sonido: arranca silenciado y pide un clic en esta ventana
+      el.muted = true;
+      el.play().catch(() => {});
+      medioProy && (medioProy.aviso = 'El navegador bloqueó el sonido: el video arrancó silenciado. Haz un clic una vez en la ventana de proyección (en el monitor) para activar el sonido.');
+      mostrarHintSonido();
+      reportarMedio({});
+    });
+  } else if (r.kind === 'youtube'){
+    el = document.createElement('iframe');
+    const p = new URLSearchParams({ enablejsapi:'1', autoplay:'1', controls:'0', rel:'0', modestbranding:'1',
+      playsinline:'1', iv_load_policy:'3', disablekb:'1', origin: location.origin });
+    if (opts.mute) p.set('mute', '1');
+    if (opts.loop){ p.set('loop', '1'); p.set('playlist', r.ytId); }
+    if (r.inicio) p.set('start', String(r.inicio));
+    el.src = `https://www.youtube.com/embed/${r.ytId}?${p}`;
+    el.allow = 'autoplay; encrypted-media; fullscreen';
+    el.onload = () => {
+      el.contentWindow.postMessage(JSON.stringify({ event:'listening', id:'proy', channel:'widget' }), '*');
+      setTimeout(() => { if (medioProy && medioProy.el === el){ ytCmd('setVolume', [Math.round(opts.volumen * 100)]); } }, 800);
+    };
+    if (!proyActivado) mostrarHintSonido();
+  } else {
+    el = document.createElement('iframe');
+    el.src = r.src;
+    el.allow = 'autoplay; fullscreen';
+  }
+  el.className = 'medio-el';
+  cont.appendChild(el);
+  medioProy = { item, opts, kind: r.kind, el, aviso:null };
+  view.setAttribute('data-modo', 'medio');
+  if (r.kind === 'video' || r.kind === 'youtube') medioProyTimer = setInterval(() => reportarMedio({}), 500);
+  else setTimeout(() => reportarMedio({}), 300);
+}
+
+function controlarMedioProyector(accion, valor){
+  if (!medioProy) return;
+  const { kind, el } = medioProy;
+  if (accion === 'ajuste'){
+    medioProy.opts.ajuste = valor;
+    document.getElementById('projector-media').style.setProperty('--ajuste', valor);
+    return;
+  }
+  if (kind === 'video'){
+    switch(accion){
+      case 'toggle':  el.paused ? el.play().catch(() => {}) : el.pause(); break;
+      case 'play':    el.play().catch(() => {}); break;
+      case 'pause':   el.pause(); break;
+      case 'restart': el.currentTime = 0; el.play().catch(() => {}); break;
+      case 'seek':    el.currentTime = valor; break;
+      case 'mute':    el.muted = !!valor; if (!valor) el.play().catch(() => {}); break;
+      case 'volumen': el.volume = valor; break;
+      case 'loop':    el.loop = !!valor; break;
+    }
+  } else if (kind === 'youtube'){
+    switch(accion){
+      case 'toggle':  ytCmd(ytInfo.playerState === 1 ? 'pauseVideo' : 'playVideo'); break;
+      case 'play':    ytCmd('playVideo'); break;
+      case 'pause':   ytCmd('pauseVideo'); break;
+      case 'restart': ytCmd('seekTo', [0, true]); ytCmd('playVideo'); break;
+      case 'seek':    ytCmd('seekTo', [valor, true]); break;
+      case 'mute':    ytCmd(valor ? 'mute' : 'unMute'); break;
+      case 'volumen': ytCmd('setVolume', [Math.round(valor * 100)]); break;
+      case 'loop':    ytCmd('setLoop', [!!valor]); break;
+    }
+  }
+  setTimeout(() => reportarMedio({}), 150);
+}
+
+// Estado que envía el reproductor de YouTube (tiempo, duración, play/pausa)
+window.addEventListener('message', (e) => {
+  let host = '';
+  try{ host = new URL(e.origin).hostname; }catch(err){ return; }
+  if (!/(^|\.)youtube(-nocookie)?\.com$/.test(host)) return;
+  let d; try{ d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; }catch(err){ return; }
+  if (d && d.event === 'infoDelivery' && d.info) Object.assign(ytInfo, d.info);
+  if (d && d.event === 'onError') reportarMedio({ error:'YouTube no permite reproducir este video fuera de su página (o es privado).' });
+});
+
+// Un clic en la ventana de proyección habilita el sonido para el resto de la sesión
+document.addEventListener('pointerdown', () => {
+  if (!document.getElementById('view-projector').classList.contains('active')) return;
+  proyActivado = true;
+  const hint = document.getElementById('medio-hint'); if (hint) hint.style.display = 'none';
+  if (medioProy && medioProy.kind === 'video' && medioProy.el.muted && !medioProy.opts.mute){
+    medioProy.el.muted = false; medioProy.aviso = null;
+    medioProy.el.play().catch(() => {});
+  }
+  if (medioProy && medioProy.kind === 'youtube'){ ytCmd('unMute'); ytCmd('playVideo'); }
+});
+
+/* ---- Control desde el celular (opcional, si el control móvil envía estos comandos) ----
+   {tipo:'medios-nav', accion:'siguiente'|'anterior'|'play-pausa'|'quitar'|'pantalla-negra'} */
+function manejarComandoWSMedios(msg){
+  if (msg.accion !== 'pantalla-negra' && operadorActivo()) cambiarPestana('medios');
+  switch(msg.accion){
+    case 'siguiente':      pasoMedio(1);       break;
+    case 'anterior':       pasoMedio(-1);      break;
+    case 'play-pausa':     ctlMedio('toggle'); break;
+    case 'quitar':         quitarMedio();      break;
+    case 'pantalla-negra': toggleNegro();      break;
+  }
+}
 
 /* =========================================================================
    NÚCLEO UNIFICADO: pestañas, pantalla negra, canal, teclado y arranque
@@ -3609,6 +4194,10 @@ function operadorActivo(){
 
 /* ---- Vistas ---- */
 function showLanding(){
+  if (document.getElementById('view-projector').classList.contains('active')){
+    limpiarMedioProyector();
+    document.getElementById('view-projector').setAttribute('data-modo', modoPrevioProyector);
+  }
   document.getElementById('view-landing').style.display = 'flex';
   document.getElementById('view-operator').classList.remove('active');
   document.getElementById('view-projector').classList.remove('active');
@@ -3628,6 +4217,7 @@ function goToProjector(){
   // Modo de una sola ventana: repetir lo último que se envió
   if (ultimaProyeccion){
     if (ultimaProyeccion.type === 'line') renderProjectorLine(ultimaProyeccion.text);
+    else if (ultimaProyeccion.type === 'media') renderProjectorMedia(ultimaProyeccion.item, ultimaProyeccion.opts);
     else renderProjectorVerse(ultimaProyeccion.text, ultimaProyeccion.ref);
   }
   aplicarNegroVisual();
@@ -3641,14 +4231,17 @@ function openProjectorWindow(){
 
 /* ---- Pestañas Alabanzas / Biblia ---- */
 function cambiarPestana(tab){
-  tabActual = (tab === 'biblia') ? 'biblia' : 'alabanzas';
+  tabActual = (tab === 'biblia' || tab === 'medios') ? tab : 'alabanzas';
   document.getElementById('view-operator').setAttribute('data-tab', tabActual);
   document.getElementById('maintab-alabanzas').classList.toggle('active', tabActual === 'alabanzas');
   document.getElementById('maintab-biblia').classList.toggle('active', tabActual === 'biblia');
-  document.getElementById('brand-sub').textContent = (tabActual === 'biblia') ? BIBLIA_VERSION : 'control manual';
+  document.getElementById('maintab-medios').classList.toggle('active', tabActual === 'medios');
+  document.getElementById('brand-sub').textContent = (tabActual === 'biblia') ? BIBLIA_VERSION : (tabActual === 'medios' ? 'imágenes y videos' : 'control manual');
   if (tabActual === 'alabanzas'){
     renderSidebar();
     renderMainAl();
+  } else if (tabActual === 'medios'){
+    renderMedios();
   } else {
     poblarSelectLibros();
     renderHistory();
@@ -3692,9 +4285,16 @@ function iniciarCanal(){
     if (d.type === 'line')        renderProjectorLine(d.text);
     else if (d.type === 'verse')  renderProjectorVerse(d.text, d.ref);
     else if (d.type === 'style')  aplicarEstiloEnProyector(d.estilo);
+    else if (d.type === 'media')  renderProjectorMedia(d.item, d.opts);
+    else if (d.type === 'media-ctl') controlarMedioProyector(d.accion, d.valor);
+    else if (d.type === 'media-status'){
+      if (operadorActivo() && d.id === medioActivoId){ medioEstado = d; actualizarEstadoMedioOperador(); }
+    }
     else if (d.type === 'black'){ negroActivo = !!d.on; aplicarNegroVisual(); }
     else if (d.type === 'hello' && operadorActivo()){
       ch.postMessage({ type:'black', on: negroActivo });
+      // Si la proyección se abrió tarde, le reenviamos lo que está en pantalla
+      if (ultimaProyeccion) ch.postMessage(ultimaProyeccion);
     }
   };
 }
@@ -3720,9 +4320,14 @@ document.addEventListener('keydown', (e) => {
     else if (e.code === 'ArrowLeft'){ e.preventDefault(); stepLine(-1); }
     else if (e.code === 'PageDown'){ e.preventDefault(); goToSongInSet(1); }
     else if (e.code === 'PageUp'){ e.preventDefault(); goToSongInSet(-1); }
-  } else {
+  } else if (tabActual === 'biblia'){
     if (e.code === 'ArrowRight'){ e.preventDefault(); moverVersiculo(1); }
     else if (e.code === 'ArrowLeft'){ e.preventDefault(); moverVersiculo(-1); }
+  } else {
+    if (e.code === 'ArrowRight'){ e.preventDefault(); pasoMedio(1); }
+    else if (e.code === 'ArrowLeft'){ e.preventDefault(); pasoMedio(-1); }
+    else if (e.code === 'Space'){ e.preventDefault(); ctlMedio('toggle'); }
+    else if (e.code === 'KeyQ'){ e.preventDefault(); quitarMedio(); }
   }
 });
 
@@ -3732,16 +4337,19 @@ window.addEventListener('load', async () => {
   loadSetlist();
   loadPlaylists();
   loadHistory();
+  loadMedios();
   iniciarCanal();
-  conectarWS();        // control remoto desde celular (solo en red local)
-  conectarWSBiblia();
   inicializarControlesDeEstilo();
   cargarBiblia();
 
   if (window.location.hash === '#projector'){
     goToProjector();
-    return;
+    return;   // la ventana de proyección NO se conecta al WebSocket (evita comandos duplicados)
   }
+
+  conectarWS();        // control remoto desde celular (solo en red local, solo el operador)
+  conectarWSBiblia();
+  cargarMediosRepo();
 
   // Sincroniza el catálogo compartido (canciones.json) sin hacer esperar al operador
   mostrarIndicadorCarga(true);
