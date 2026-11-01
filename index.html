@@ -1507,7 +1507,7 @@
   <div id="projector-media"></div>
   <div id="medio-hint">Haz clic aquí una vez para habilitar el sonido</div>
   <div id="projector-black"></div>
-  <div class="projector-exit-hint">Esc para salir</div>
+  <div class="projector-exit-hint">Esc para salir · v 1-nov</div>
 </div>
 <!-- ===================== MODAL AÑADIR/EDITAR CANCIÓN ===================== -->
 <div class="modal-backdrop" id="modal-add">
@@ -3022,6 +3022,7 @@ function aplicarEstiloEnProyector(estilo){
   document.getElementById('projector-line').classList.toggle('glow', ANIM_LETRA.glow);
   document.getElementById('view-projector').classList.toggle('con-siguiente', !!estilo.siguiente);
   document.getElementById('projector-bg-image').classList.toggle('mov', !!estilo.fondoMov);
+  ambActualizarFondo(estilo);
   const nuevaInt = parseFloat(estilo.ambIntensidad) || 1;
   if (nuevaInt !== amb.k){ amb.k = nuevaInt; amb.w = 0; }
   const projectorView = document.getElementById('view-projector');
@@ -4346,10 +4347,27 @@ function htmlBarraAmbiente(){
 }
 
 /* ---- Lado proyección: motor de partículas ---- */
-const amb = { nombre:'ninguno', k:1, parts:[], extra:null, raf:0, w:0, h:0, last:0, t:0, sprites:{} };
+const amb = { nombre:'ninguno', k:1, parts:[], extra:null, raf:0, w:0, h:0, last:0, t:0, sprites:{},
+  claro:false, tinta:[17,17,17] };   // claro = fondo claro: las partículas se dibujan oscuras (con luz no se verían)
+function hexARgb(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return null;
+  const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function ambActualizarFondo(estilo){
+  const bg = hexARgb(estilo.bgColor), tx = hexARgb(estilo.textColor);
+  const lum = bg ? (0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2]) / 255 : 0;
+  // con imagen de fondo hay capa oscura encima: se trata como fondo oscuro
+  const claro = !estilo.bgImage && lum > 0.6;
+  if (claro !== amb.claro || (tx && tx.join() !== amb.tinta.join())){
+    amb.claro = claro; if (tx) amb.tinta = tx; amb.sprites = {};
+  }
+}
+function ambColor(rgbOscuro){ return amb.claro ? amb.tinta : rgbOscuro; }
+function ambModo(){ return amb.claro ? 'source-over' : 'lighter'; }
 const R = (a, b) => a + Math.random() * (b - a);
 
 function ambSprite(clave, rgb, nucleo){
+  clave += rgb.join(',');
   if (amb.sprites[clave]) return amb.sprites[clave];
   const s = 128, c = document.createElement('canvas'); c.width = c.height = s;
   const g = c.getContext('2d'), gr = g.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
@@ -4379,11 +4397,11 @@ function ambCrear(){
       amb.extra = { prox: R(4, 10), fugaz:null };
       break;
     case 'niebla':
-      for (let i = 0; i < n(6) + 3; i++) amb.parts.push({ x:R(-.2,1.2)*w, y:R(.45,1.05)*h, r:R(.35,.7)*w,
-        vx:R(6,18)*sc*(Math.random() < .5 ? -1 : 1), a:R(.05,.1), ph:R(0,6.3) });
+      for (let i = 0; i < n(6) + 3; i++) amb.parts.push({ x:R(-.2,1.2)*w, y:R(.35,1.1)*h, r:R(.35,.7)*w,
+        vx:R(10,26)*sc*(Math.random() < .5 ? -1 : 1), a:R(.16,.3), ph:R(0,6.3) });
       break;
     case 'lluvia':
-      for (let i = 0; i < n(130); i++) amb.parts.push({ x:R(-.1,1)*w, y:R(0,h), l:R(14,32)*sc, v:R(520,900)*sc, a:R(.1,.28) });
+      for (let i = 0; i < n(130); i++) amb.parts.push({ x:R(-.1,1)*w, y:R(0,h), l:R(18,38)*sc, v:R(520,900)*sc, a:R(.2,.42) });
       break;
   }
 }
@@ -4398,22 +4416,25 @@ function ambDibujar(ctx, dt){
   const { w, h, t } = amb, sc = h / 1080;
   ctx.clearRect(0, 0, w, h);
   const kA = Math.min(1.3, .6 + .4 * amb.k);   // la intensidad también sube un poco el brillo
+  const kL = amb.claro ? 1.8 : 1;              // en fondo claro las partículas oscuras necesitan más opacidad
   switch (amb.nombre){
     case 'luz': {
-      const sp = ambSprite('luz', [255,236,205]);
-      ctx.globalCompositeOperation = 'lighter';
+      const sp = ambSprite('luz', ambColor([255,236,205]));
+      ctx.globalCompositeOperation = ambModo();
       for (const p of amb.parts){
         p.x += p.vx * dt; p.y += p.vy * dt;
         if (p.y < -p.r) { p.y = h + p.r; p.x = R(0, w); }
         if (p.x < -p.r) p.x = w + p.r; else if (p.x > w + p.r) p.x = -p.r;
-        ctx.globalAlpha = Math.min(1, p.a * kA * (.55 + .45 * Math.sin(t * p.sp + p.ph)));
+        ctx.globalAlpha = Math.min(1, p.a * kA * kL * (.55 + .45 * Math.sin(t * p.sp + p.ph)));
         ctx.drawImage(sp, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
       }
       break;
     }
     case 'brasas': {
-      const sps = [ambSprite('brasaN', [255,140,40], true), ambSprite('brasaA', [255,205,90], true)];
-      ctx.globalCompositeOperation = 'lighter';
+      const sps = amb.claro
+        ? [ambSprite('brasaN', [220,90,20], true), ambSprite('brasaA', [235,150,30], true)]
+        : [ambSprite('brasaN', [255,140,40], true), ambSprite('brasaA', [255,205,90], true)];
+      ctx.globalCompositeOperation = ambModo();
       for (const p of amb.parts){
         p.edad += dt; p.y += p.vy * dt;
         if (p.edad > p.vida || p.y < -20) ambBrasa(p, false);
@@ -4425,11 +4446,11 @@ function ambDibujar(ctx, dt){
       break;
     }
     case 'estrellas': {
-      const sp = ambSprite('estrella', [235,240,255], true);
-      ctx.globalCompositeOperation = 'lighter';
+      const sp = ambSprite('estrella', ambColor([235,240,255]), true);
+      ctx.globalCompositeOperation = ambModo();
       for (const p of amb.parts){
         ctx.globalAlpha = Math.min(1, (.3 + .7 * (.5 + .5 * Math.sin(t * p.sp + p.ph))) * kA);
-        const d = p.r * 6;
+        const d = p.r * (amb.claro ? 8 : 6);
         ctx.drawImage(sp, p.x - d/2, p.y - d/2, d, d);
       }
       const ex = amb.extra;
@@ -4443,7 +4464,8 @@ function ambDibujar(ctx, dt){
         const a = Math.sin(Math.PI * Math.min(1, f.edad / f.vida));
         const lx = f.x - f.vx * .18, ly = f.y - f.vy * .18;
         const gr = ctx.createLinearGradient(lx, ly, f.x, f.y);
-        gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, `rgba(255,255,255,${.8 * a})`);
+        const fc = amb.claro ? amb.tinta.join(',') : '255,255,255';
+        gr.addColorStop(0, `rgba(${fc},0)`); gr.addColorStop(1, `rgba(${fc},${.8 * a})`);
         ctx.globalAlpha = 1; ctx.strokeStyle = gr; ctx.lineWidth = 2 * sc; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(f.x, f.y); ctx.stroke();
         if (f.edad >= f.vida) ex.fugaz = null;
@@ -4451,24 +4473,25 @@ function ambDibujar(ctx, dt){
       break;
     }
     case 'niebla': {
-      const sp = ambSprite('niebla', [205,210,222]);
+      const sp = ambSprite('niebla', amb.claro ? [95,102,118] : [215,220,232]);
       ctx.globalCompositeOperation = 'source-over';
       for (const p of amb.parts){
         p.x += p.vx * dt;
         if (p.vx > 0 && p.x - p.r > w) p.x = -p.r; else if (p.vx < 0 && p.x + p.r < 0) p.x = w + p.r;
-        ctx.globalAlpha = Math.min(.35, p.a * kA * (.75 + .25 * Math.sin(t * .2 + p.ph)));
+        ctx.globalAlpha = Math.min(.55, p.a * kA * (amb.claro ? 1.3 : 1) * (.75 + .25 * Math.sin(t * .2 + p.ph)));
         ctx.drawImage(sp, p.x - p.r, p.y - p.r * .55, p.r * 2, p.r * 1.1);
       }
       break;
     }
     case 'lluvia': {
       ctx.globalCompositeOperation = 'source-over';
-      ctx.lineWidth = 1.3 * sc; ctx.lineCap = 'round';
+      ctx.lineWidth = 1.8 * sc; ctx.lineCap = 'round';
       for (const p of amb.parts){
         p.y += p.v * dt; p.x += p.v * .12 * dt;
         if (p.y - p.l > h){ p.y = -R(0, 60); p.x = R(-.1, 1) * w; }
         ctx.globalAlpha = 1;
-        ctx.strokeStyle = `rgba(205,220,240,${Math.min(.5, p.a * kA)})`;
+        const cl = amb.claro ? amb.tinta : [205,220,240];
+        ctx.strokeStyle = `rgba(${cl[0]},${cl[1]},${cl[2]},${Math.min(.7, p.a * kA * (amb.claro ? 1.6 : 1))})`;
         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.l * .12, p.y - p.l); ctx.stroke();
       }
       break;
