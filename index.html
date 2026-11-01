@@ -1295,6 +1295,37 @@
   @keyframes medioEntra{from{opacity:0;}to{opacity:1;}}
   #medio-hint{position:absolute;left:50%;bottom:5vh;transform:translateX(-50%);z-index:4;background:rgba(0,0,0,.75);color:#fff;
     padding:.7rem 1.2rem;border-radius:10px;font:600 1rem var(--font-body);display:none;cursor:pointer;border:1px solid #c98a3a;}
+
+  /* ===================== ANIMACIONES EXTRA Y AMBIENTES ===================== */
+  #projector-line.anim-enfoque{animation:enfoqueEntra 1.1s cubic-bezier(.2,.7,.2,1) both;}
+  @keyframes enfoqueEntra{from{opacity:0;filter:blur(16px);transform:scale(.99);}to{opacity:1;filter:none;transform:none;}}
+  #projector-line.anim-escala{animation:escalaEntra .9s cubic-bezier(.2,.7,.2,1) both;}
+  @keyframes escalaEntra{from{opacity:0;transform:scale(1.14);}to{opacity:1;transform:none;}}
+  #projector-line .wd{display:inline-block;white-space:nowrap;}
+  #projector-line .c{opacity:0;animation:letraEntra .22s ease forwards;animation-delay:calc(var(--i) * var(--paso, 35ms));}
+  @keyframes letraEntra{to{opacity:1;}}
+  #projector-line.glow.anim-enfoque{animation:enfoqueEntra 1.1s cubic-bezier(.2,.7,.2,1) both, resplandor 4.5s ease-in-out 1.1s infinite;}
+  #projector-line.glow.anim-escala{animation:escalaEntra .9s cubic-bezier(.2,.7,.2,1) both, resplandor 4.5s ease-in-out .9s infinite;}
+
+  #projector-next{position:relative;z-index:2;display:none;margin-top:1.4em;font-family:var(--font-display);font-weight:500;
+    font-size:calc(clamp(1.1rem, 2.6vw, 2.2rem) * var(--proj-scale, 1));line-height:1.3;max-width:85vw;opacity:.36;
+    transition:opacity .3s ease;text-shadow:0 2px 8px rgba(0,0,0,.5);}
+  #projector-next.fade{opacity:0;}
+  #view-projector.con-siguiente[data-modo="letra"] #projector-next:not(:empty){display:block;}
+
+  #projector-bg-image.mov{animation:fondoMov 40s ease-in-out infinite alternate;}
+  @keyframes fondoMov{from{transform:scale(1.03) translate(0,0);}to{transform:scale(1.15) translate(-2.2%,-1.6%);}}
+
+  #projector-ambiente{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;display:none;}
+  #view-projector[data-modo="letra"] #projector-ambiente.on{display:block;}
+
+  .amb-bar{display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center;}
+  .amb-label{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-dim);margin-right:0.3rem;}
+  .amb-chip{background:var(--bg-panel);border:1px solid var(--line);color:var(--ink-dim);border-radius:999px;padding:0.3rem 0.8rem;
+    font-size:0.8rem;cursor:pointer;font-family:var(--font-body);}
+  .amb-chip:hover{color:var(--ink-warm);border-color:var(--ink-dim);}
+  .amb-chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink-warm);font-weight:600;}
+  .modal select.full{width:100%;background:var(--bg-deep);border:1px solid var(--line);border-radius:8px;color:var(--ink-warm);padding:0.55rem;font-size:0.92rem;}
 </style>
 </head>
 
@@ -1349,6 +1380,7 @@
       <span class="kbd">␣</span> o <span class="kbd">→</span> avanzar línea &nbsp;·&nbsp;
       <span class="kbd">←</span> retroceder línea &nbsp;·&nbsp;
       <span class="kbd">Pg↑</span>/<span class="kbd">Pg↓</span> cambiar canción &nbsp;·&nbsp;
+      <span class="kbd">0</span>–<span class="kbd">5</span> ambiente &nbsp;·&nbsp;
       <span class="kbd">B</span> pantalla negra
     </div>
     <div id="footer-song-name" style="color:var(--ink-warm);font-weight:600;"></div>
@@ -1466,7 +1498,9 @@
 <div id="view-projector" data-modo="letra">
   <div id="projector-bg-image"></div>
   <div id="projector-overlay"></div>
+  <canvas id="projector-ambiente"></canvas>
   <div id="projector-line" class="projector-empty">Esperando…</div>
+  <div id="projector-next"></div>
   <div id="projector-text" class="projector-empty">Esperando versículo…</div>
   <div id="projector-ref"></div>
   <div id="projector-media"></div>
@@ -1483,6 +1517,16 @@
     <input type="text" id="input-title" placeholder="Ej. Cuán grande es Él">
     <label>Letra completa</label>
     <textarea id="input-lyrics" placeholder="Pega aquí la letra completa...&#10;&#10;Coro:&#10;Cuán grande es Él&#10;Cuán grande es Él..."></textarea>
+    <label>Ambiente de fondo de esta canción</label>
+    <select id="input-ambiente" class="full">
+      <option value="">Usar el ambiente general</option>
+      <option value="ninguno">Ninguno</option>
+      <option value="luz">Luz suave</option>
+      <option value="brasas">Brasas</option>
+      <option value="estrellas">Estrellas</option>
+      <option value="niebla">Niebla</option>
+      <option value="lluvia">Lluvia</option>
+    </select>
     <div class="checkbox-row">
       <input type="checkbox" id="input-keep-tags" checked>
       <label style="margin:0;text-transform:none;letter-spacing:0;font-size:0.85rem;" for="input-keep-tags">
@@ -1615,11 +1659,36 @@
           <option value="suave">Suave (aparece subiendo)</option>
           <option value="palabras">Palabra por palabra</option>
           <option value="video">Estilo video de letras (mayúsculas + cortina)</option>
+          <option value="enfoque">Enfoque (de borroso a nítido)</option>
+          <option value="escala">Acercamiento suave</option>
+          <option value="escribir">Letra por letra (como si se escribiera)</option>
         </select>
         <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.85rem;margin-top:0.6rem;cursor:pointer;">
           <input type="checkbox" id="chk-resplandor" onchange="aplicarEstiloProyeccion()" style="accent-color:var(--accent);">
           Resplandor suave en la letra
         </label>
+        <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.85rem;margin-top:0.5rem;cursor:pointer;">
+          <input type="checkbox" id="chk-siguiente" onchange="aplicarEstiloProyeccion()" style="accent-color:var(--accent);">
+          Mostrar la siguiente línea en tenue (debajo)
+        </label>
+      </div>
+
+      <div style="margin-top:1rem;border-top:1px solid var(--line);padding-top:0.8rem;">
+        <label style="font-size:0.85rem;display:block;margin-bottom:0.4rem;">Ambiente general (canciones sin ambiente propio)</label>
+        <select id="sel-amb-general" onchange="aplicarEstiloProyeccion(); cambioAmbienteGeneral();" style="width:100%;padding:0.45rem;border-radius:8px;">
+          <option value="ninguno">Ninguno</option>
+          <option value="luz">Luz suave</option>
+          <option value="brasas">Brasas</option>
+          <option value="estrellas">Estrellas</option>
+          <option value="niebla">Niebla</option>
+          <option value="lluvia">Lluvia</option>
+        </select>
+        <label style="display:flex;justify-content:space-between;font-size:0.85rem;margin:0.6rem 0 0.3rem;">
+          <span>Intensidad del ambiente</span><span id="valor-amb-int">100%</span>
+        </label>
+        <input type="range" id="rango-amb-int" min="0.3" max="1.6" step="0.1" value="1" style="width:100%;"
+          oninput="document.getElementById('valor-amb-int').textContent = Math.round(this.value*100)+'%'; aplicarEstiloProyeccion();">
+        <div style="font-size:0.75rem;color:var(--ink-dim);margin-top:0.4rem;line-height:1.4;">Se ve solo con las alabanzas (no en versículos ni medios). En vivo se cambia con los botones de "Ambiente" o las teclas 0–5.</div>
       </div>
 
       <div style="margin-top:1rem;border-top:1px solid var(--line);padding-top:0.8rem;">
@@ -1639,6 +1708,10 @@
             style="width:100%;"
             oninput="document.getElementById('valor-oscurecer').textContent = Math.round(this.value*100)+'%'; aplicarEstiloProyeccion();">
         </div>
+        <label style="display:flex;gap:0.5rem;align-items:center;font-size:0.85rem;margin-top:0.6rem;cursor:pointer;">
+          <input type="checkbox" id="chk-fondo-mov" onchange="aplicarEstiloProyeccion()" style="accent-color:var(--accent);">
+          Movimiento lento de la imagen de fondo
+        </label>
       </div>
     </div>
     <div class="modal-actions">
@@ -1723,10 +1796,18 @@ async function cargarCatalogoCompartido(){
     for (const raw of incoming){
       if (!raw || !raw.title || !Array.isArray(raw.lines) || raw.lines.length === 0) continue;
       const fp = songFingerprint(raw);
-      if (existingFps.has(fp)) continue;
+      if (existingFps.has(fp)){
+        // canciones.json manda en el ambiente: si lo define, se actualiza aquí también
+        if (raw.ambiente){
+          const ex = songs.find(s => songFingerprint(s) === fp);
+          if (ex && ex.ambiente !== raw.ambiente){ ex.ambiente = raw.ambiente; added++; }
+        }
+        continue;
+      }
       songs.push({
         id: 's' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
         title: raw.title,
+        ambiente: raw.ambiente || undefined,
         lines: raw.lines.map((l, i) => ({ id: 'l' + i, text: l.text || '', isTag: !!l.isTag }))
       });
       existingFps.add(fp);
@@ -1783,8 +1864,14 @@ function broadcastLine(text){
   const hayTexto = !!(text && text.trim());
   if (hayTexto) liberarNegro();
   if (hayTexto && medioActivoId){ medioActivoId = null; medioEstado = null; if (tabActual === 'medios') renderMedios(); }
-  if (hayTexto || !ultimaProyeccion || ultimaProyeccion.type !== 'media') ultimaProyeccion = { type:'line', text };
-  getChannel().postMessage({ type:'line', text });
+  let next = '';
+  if (hayTexto){
+    const sg = songs.find(s => s.id === currentSongId);
+    const sig = sg ? getCantables(sg)[currentLineIndex + 1] : null;
+    next = sig ? sig.text : '';
+  }
+  if (hayTexto || !ultimaProyeccion || ultimaProyeccion.type !== 'media') ultimaProyeccion = { type:'line', text, next };
+  getChannel().postMessage({ type:'line', text, next });
   // Notificar al servidor WebSocket para sincronizar controles móviles
   wsSendEstado();
 }
@@ -1843,6 +1930,7 @@ function manejarComandoWS(msg){
     case 'cancion-siguiente': goToSongInSet(1);       break;
     case 'cancion-anterior':  goToSongInSet(-1);      break;
     case 'pantalla-negra':    toggleNegro();          break;
+    case 'ambiente':          setAmbiente(msg.nombre); break;
     case 'ir-cancion':
       if (typeof msg.indice === 'number' && setlist[msg.indice]){
         selectSong(setlist[msg.indice]);
@@ -1872,7 +1960,7 @@ function manejarComandoWS(msg){
    ========================================================================= */
 
 
-function renderProjectorLine(text){
+function renderProjectorLine(text, next){
   const vistaP = document.getElementById('view-projector');
   const el = document.getElementById('projector-line');
   if (vistaP.getAttribute('data-modo') === 'medio'){
@@ -1880,6 +1968,7 @@ function renderProjectorLine(text){
       // Elegir otra canción manda una línea vacía: no debe cortar el video/imagen en pantalla
       modoPrevioProyector = 'letra';
       el.textContent = 'Esperando canción…'; el.classList.add('projector-empty');
+      document.getElementById('projector-next').textContent = '';
       return;
     }
     limpiarMedioProyector();
@@ -1887,9 +1976,13 @@ function renderProjectorLine(text){
   vistaP.setAttribute('data-modo', 'letra');
   const esVideo = ANIM_LETRA.modo === 'video';
   el.classList.remove('wipe-in');
+  const elNext = document.getElementById('projector-next');
+  elNext.classList.add('fade');
   if (esVideo){ void el.offsetWidth; el.classList.add('wipe-out'); } else el.classList.add('fade');
   setTimeout(() => {
-    el.classList.remove('anim-suave', 'wipe-out');
+    el.classList.remove('anim-suave', 'anim-enfoque', 'anim-escala', 'wipe-out');
+    elNext.textContent = (text && text.trim() && next) ? next : '';
+    elNext.classList.remove('fade');
     if (text && text.trim()){
       if (esVideo){
         el.textContent = '';
@@ -1905,9 +1998,21 @@ function renderProjectorLine(text){
           el.appendChild(s);
           if (i < arr.length - 1) el.appendChild(document.createTextNode(' '));
         });
+      } else if (ANIM_LETRA.modo === 'escribir'){
+        el.textContent = '';
+        const limpio = text.trim();
+        el.style.setProperty('--paso', Math.max(12, Math.min(38, Math.round(1300 / limpio.length))) + 'ms');
+        let n = 0;
+        limpio.split(/\s+/).forEach((w, i, arr) => {
+          const wd = document.createElement('span'); wd.className = 'wd';
+          for (const ch of w){ const c = document.createElement('span'); c.className = 'c'; c.style.setProperty('--i', n++); c.textContent = ch; wd.appendChild(c); }
+          el.appendChild(wd);
+          if (i < arr.length - 1){ el.appendChild(document.createTextNode(' ')); n++; }
+        });
       } else {
         el.textContent = text;
-        if (ANIM_LETRA.modo === 'suave'){ void el.offsetWidth; el.classList.add('anim-suave'); }
+        const clase = { suave:'anim-suave', enfoque:'anim-enfoque', escala:'anim-escala' }[ANIM_LETRA.modo];
+        if (clase){ void el.offsetWidth; el.classList.add(clase); }
       }
       el.classList.remove('projector-empty');
     } else {
@@ -1945,6 +2050,7 @@ function openAddSongModal(songId){
     // Si la canción tiene al menos una etiqueta guardada, asumimos que el operador
     // quería mantenerlas; si no tiene ninguna, no forzamos la casilla.
     document.getElementById('input-keep-tags').checked = song.lines.some(l => l.isTag);
+    document.getElementById('input-ambiente').value = song.ambiente || '';
     if (modalTitle) modalTitle.textContent = 'Editar canción';
     if (hintText) hintText.textContent = 'Edita el título o la letra. Al guardar, se actualiza esta misma canción (no se crea una nueva), así que se mantiene en la lista de hoy si ya estaba incluida.';
     if (saveBtn) saveBtn.textContent = 'Guardar cambios';
@@ -1952,6 +2058,7 @@ function openAddSongModal(songId){
     document.getElementById('input-title').value = '';
     document.getElementById('input-lyrics').value = '';
     document.getElementById('input-keep-tags').checked = true;
+    document.getElementById('input-ambiente').value = '';
     if (modalTitle) modalTitle.textContent = 'Añadir canción';
     if (hintText) hintText.textContent = 'Pega la letra completa. El sistema la divide en líneas automáticamente por cada salto de línea, ignorando líneas vacías.';
     if (saveBtn) saveBtn.textContent = 'Guardar canción';
@@ -1998,6 +2105,7 @@ function saveSong(){
   const title = document.getElementById('input-title').value.trim();
   const raw = document.getElementById('input-lyrics').value;
   const keepTags = document.getElementById('input-keep-tags').checked;
+  const ambiente = document.getElementById('input-ambiente').value || undefined;
 
   if (!title){ alert('Ponle un título a la canción.'); return; }
   if (!raw.trim()){ alert('Pega la letra de la canción.'); return; }
@@ -2014,7 +2122,7 @@ function saveSong(){
     const idx = songs.findIndex(s => s.id === editingSongId);
     if (idx === -1){
       alert('Esa canción ya no existe en el catálogo (puede que se haya eliminado). Se guardará como una canción nueva.');
-      const nuevaCancion = { id: 's' + Date.now(), title, lines };
+      const nuevaCancion = { id: 's' + Date.now(), title, lines, ambiente };
       songs.push(nuevaCancion);
       saveSongs();
       closeAddSongModal();
@@ -2023,8 +2131,9 @@ function saveSong(){
       return;
     }
 
-    const eraLaActiva = currentSongId === editingSongId;
-    songs[idx] = { id: editingSongId, title, lines };
+    const idEditado = editingSongId;   // closeAddSongModal() lo pone en null
+    const eraLaActiva = currentSongId === idEditado;
+    songs[idx] = { id: idEditado, title, lines, ambiente };
     saveSongs();
     closeAddSongModal();
     renderSidebar();
@@ -2033,7 +2142,7 @@ function saveSong(){
       // La letra pudo cambiar de longitud u orden; en vez de adivinar a qué línea
       // nueva corresponde la posición anterior, reiniciamos la proyección de esta
       // canción desde el principio para evitar mostrar una línea equivocada.
-      selectSong(editingSongId);
+      selectSong(idEditado);
     } else {
       renderMainAl();
     }
@@ -2041,7 +2150,7 @@ function saveSong(){
   }
 
   // Modo "añadir canción nueva"
-  const song = { id: 's' + Date.now(), title, lines };
+  const song = { id: 's' + Date.now(), title, lines, ambiente };
   songs.push(song);
   saveSongs();
   closeAddSongModal();
@@ -2125,6 +2234,8 @@ function renderCatalogList(){
 
 function selectSong(id){
   currentSongId = id;
+  const sgA = songs.find(s => s.id === id);
+  setAmbiente((sgA && sgA.ambiente) || ambienteGeneral());
   currentLineIndex = -1;
   // si la canción está en la lista de hoy, sincronizar la posición
   const posInSet = setlist.indexOf(id);
@@ -2693,7 +2804,7 @@ function renderMainAl(){
     if (!cantables[i].isTag){ lineaAnteriorReal = cantables[i]; break; }
   }
 
-  main.innerHTML = `
+  main.innerHTML = htmlBarraAmbiente() + `
     <div class="current-line-card">
       <div class="label">En proyección ahora</div>
       <div class="current-line-text">${currentLine ? escapeHtml(currentLine.text) : '— ninguna línea proyectada todavía —'}</div>
@@ -2908,6 +3019,10 @@ function aplicarEstiloEnProyector(estilo){
   ANIM_LETRA.modo = estilo.anim || 'suave';
   ANIM_LETRA.glow = !!estilo.glow;
   document.getElementById('projector-line').classList.toggle('glow', ANIM_LETRA.glow);
+  document.getElementById('view-projector').classList.toggle('con-siguiente', !!estilo.siguiente);
+  document.getElementById('projector-bg-image').classList.toggle('mov', !!estilo.fondoMov);
+  const nuevaInt = parseFloat(estilo.ambIntensidad) || 1;
+  if (nuevaInt !== amb.k){ amb.k = nuevaInt; amb.w = 0; }
   const projectorView = document.getElementById('view-projector');
   const bgImageEl = document.getElementById('projector-bg-image');
   const overlayEl = document.getElementById('projector-overlay');
@@ -2918,6 +3033,7 @@ function aplicarEstiloEnProyector(estilo){
   if (estilo.textColor){
     textEl.style.color = estilo.textColor;
     document.getElementById('projector-line').style.color = estilo.textColor;
+    document.getElementById('projector-next').style.color = estilo.textColor;
     // la referencia (cita) se queda en el color de acento por contraste, salvo que
     // el texto principal y el acento naranja queden muy parecidos; en ese caso usamos textColor también.
     refEl.style.color = estilo.textColor;
@@ -2944,7 +3060,8 @@ function aplicarEstiloEnProyector(estilo){
    ========================================================================= */
 const STYLE_STORAGE_KEY = 'proyector_estilo_v1';
 const STYLE_KEYS_ANTIGUAS = ['versiculos_estilo_v1', 'alabanzas_estilo_v1'];
-const ESTILO_POR_DEFECTO = { bgColor: '#161311', textColor: '#f3eade', fontScale: 1, bgImage: null, overlayOpacity: 0.45, anim: 'suave', glow: false };
+const ESTILO_POR_DEFECTO = { bgColor: '#161311', textColor: '#f3eade', fontScale: 1, bgImage: null, overlayOpacity: 0.45, anim: 'suave', glow: false,
+  siguiente: false, fondoMov: false, ambGeneral: 'ninguno', ambIntensidad: 1 };
 
 const PRESETS_COLOR = [
   { bg:'#161311', text:'#f3eade', nombre:'Cálido oscuro (por defecto)' },
@@ -2992,6 +3109,10 @@ function estiloActualDesdeControles(){
     bgImage: previo.bgImage,
     anim: (document.getElementById('sel-animacion') || {}).value || previo.anim || 'suave',
     glow: document.getElementById('chk-resplandor') ? document.getElementById('chk-resplandor').checked : !!previo.glow,
+    siguiente: document.getElementById('chk-siguiente') ? document.getElementById('chk-siguiente').checked : !!previo.siguiente,
+    fondoMov: document.getElementById('chk-fondo-mov') ? document.getElementById('chk-fondo-mov').checked : !!previo.fondoMov,
+    ambGeneral: (document.getElementById('sel-amb-general') || {}).value || previo.ambGeneral || 'ninguno',
+    ambIntensidad: document.getElementById('rango-amb-int') ? parseFloat(document.getElementById('rango-amb-int').value) : (previo.ambIntensidad || 1),
   };
 }
 
@@ -3123,6 +3244,11 @@ function inicializarControlesDeEstilo(){
   }
   const selAn = document.getElementById('sel-animacion'); if (selAn) selAn.value = guardado.anim || 'suave';
   const chkGl = document.getElementById('chk-resplandor'); if (chkGl) chkGl.checked = !!guardado.glow;
+  const chkSg = document.getElementById('chk-siguiente'); if (chkSg) chkSg.checked = !!guardado.siguiente;
+  const chkFm = document.getElementById('chk-fondo-mov'); if (chkFm) chkFm.checked = !!guardado.fondoMov;
+  const selAg = document.getElementById('sel-amb-general'); if (selAg) selAg.value = guardado.ambGeneral || 'ninguno';
+  const rgAi = document.getElementById('rango-amb-int');
+  if (rgAi){ rgAi.value = guardado.ambIntensidad || 1; document.getElementById('valor-amb-int').textContent = Math.round((guardado.ambIntensidad || 1) * 100) + '%'; }
   actualizarVistaPreviaFondo(guardado);
   renderPresets();
 }
@@ -4181,6 +4307,204 @@ function manejarComandoWSMedios(msg){
   }
 }
 
+
+/* =========================================================================
+   AMBIENTES DE FONDO (capa animada detrás de la letra de alabanzas)
+   Se dibujan en un <canvas> en la ventana de proyección. Cada canción
+   puede traer su ambiente ("ambiente" en canciones.json) y el operador
+   puede cambiarlo en vivo con los botones o las teclas 0-5.
+   ========================================================================= */
+const AMBIENTES = [
+  { id:'ninguno',   nombre:'Ninguno' },
+  { id:'luz',       nombre:'Luz suave' },
+  { id:'brasas',    nombre:'Brasas' },
+  { id:'estrellas', nombre:'Estrellas' },
+  { id:'niebla',    nombre:'Niebla' },
+  { id:'lluvia',    nombre:'Lluvia' },
+];
+let ambienteActual = 'ninguno';   // lado operador: lo que está en pantalla
+
+/* ---- Lado operador ---- */
+function ambienteGeneral(){
+  const e = cargarEstiloGuardado() || ESTILO_POR_DEFECTO;
+  return e.ambGeneral || 'ninguno';
+}
+function setAmbiente(nombre){
+  if (!AMBIENTES.some(a => a.id === nombre)) nombre = 'ninguno';
+  ambienteActual = nombre;
+  getChannel().postMessage({ type:'ambiente', nombre });
+  if (!operadorActivo()) aplicarAmbienteProy(nombre);   // modo de una sola ventana
+  const bar = document.getElementById('amb-bar');
+  if (bar) bar.outerHTML = htmlBarraAmbiente();
+}
+function htmlBarraAmbiente(){
+  return `<div class="amb-bar" id="amb-bar">
+    <span class="amb-label">Ambiente</span>
+    ${AMBIENTES.map((a, i) => `<button class="amb-chip ${a.id === ambienteActual ? 'on' : ''}" onclick="setAmbiente('${a.id}')" title="Tecla ${i}">${a.nombre}</button>`).join('')}
+  </div>`;
+}
+
+/* ---- Lado proyección: motor de partículas ---- */
+const amb = { nombre:'ninguno', k:1, parts:[], extra:null, raf:0, w:0, h:0, last:0, t:0, sprites:{} };
+const R = (a, b) => a + Math.random() * (b - a);
+
+function ambSprite(clave, rgb, nucleo){
+  if (amb.sprites[clave]) return amb.sprites[clave];
+  const s = 128, c = document.createElement('canvas'); c.width = c.height = s;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+  const [r, gg, b] = rgb;
+  gr.addColorStop(0, `rgba(${r},${gg},${b},1)`);
+  if (nucleo) gr.addColorStop(0.18, `rgba(${r},${gg},${b},0.75)`);
+  gr.addColorStop(0.45, `rgba(${r},${gg},${b},0.25)`);
+  gr.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+  g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  return (amb.sprites[clave] = c);
+}
+
+function ambCrear(){
+  const { w, h, k } = amb, sc = h / 1080;
+  amb.parts = []; amb.extra = null;
+  const n = (base) => Math.max(1, Math.round(base * k));
+  switch (amb.nombre){
+    case 'luz':
+      for (let i = 0; i < n(22); i++) amb.parts.push({ x:R(0,w), y:R(0,h), r:R(.05,.16)*h, vx:R(-6,6)*sc, vy:-R(4,14)*sc,
+        a:R(.07,.2), ph:R(0,6.3), sp:R(.15,.45) });
+      break;
+    case 'brasas':
+      for (let i = 0; i < n(70); i++){ const p = {}; ambBrasa(p, true); amb.parts.push(p); }
+      break;
+    case 'estrellas':
+      for (let i = 0; i < n(160); i++) amb.parts.push({ x:R(0,w), y:R(0,h), r:R(.9,2.5)*sc, ph:R(0,6.3), sp:R(.4,1.8) });
+      amb.extra = { prox: R(4, 10), fugaz:null };
+      break;
+    case 'niebla':
+      for (let i = 0; i < n(6) + 3; i++) amb.parts.push({ x:R(-.2,1.2)*w, y:R(.45,1.05)*h, r:R(.35,.7)*w,
+        vx:R(6,18)*sc*(Math.random() < .5 ? -1 : 1), a:R(.05,.1), ph:R(0,6.3) });
+      break;
+    case 'lluvia':
+      for (let i = 0; i < n(130); i++) amb.parts.push({ x:R(-.1,1)*w, y:R(0,h), l:R(14,32)*sc, v:R(520,900)*sc, a:R(.1,.28) });
+      break;
+  }
+}
+function ambBrasa(p, inicio){
+  const { w, h } = amb, sc = h / 1080;
+  p.x = R(0, w); p.y = inicio ? R(h*.25, h*1.05) : h + R(5, 40);
+  p.s = R(3, 9) * sc; p.vy = -R(25, 75) * sc; p.amp = R(8, 30) * sc; p.f = R(.5, 1.5);
+  p.vida = R(4, 9); p.edad = inicio ? R(0, p.vida) : 0; p.c = Math.random() < .65 ? 0 : 1; p.ph = R(0, 6.3);
+}
+
+function ambDibujar(ctx, dt){
+  const { w, h, t } = amb, sc = h / 1080;
+  ctx.clearRect(0, 0, w, h);
+  const kA = Math.min(1.3, .6 + .4 * amb.k);   // la intensidad también sube un poco el brillo
+  switch (amb.nombre){
+    case 'luz': {
+      const sp = ambSprite('luz', [255,236,205]);
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of amb.parts){
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.y < -p.r) { p.y = h + p.r; p.x = R(0, w); }
+        if (p.x < -p.r) p.x = w + p.r; else if (p.x > w + p.r) p.x = -p.r;
+        ctx.globalAlpha = Math.min(1, p.a * kA * (.55 + .45 * Math.sin(t * p.sp + p.ph)));
+        ctx.drawImage(sp, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+      }
+      break;
+    }
+    case 'brasas': {
+      const sps = [ambSprite('brasaN', [255,140,40], true), ambSprite('brasaA', [255,205,90], true)];
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of amb.parts){
+        p.edad += dt; p.y += p.vy * dt;
+        if (p.edad > p.vida || p.y < -20) ambBrasa(p, false);
+        const x = p.x + Math.sin(t * p.f + p.ph) * p.amp;
+        ctx.globalAlpha = Math.min(1, Math.sin(Math.PI * p.edad / p.vida) * .85 * kA);
+        const d = p.s * 4;
+        ctx.drawImage(sps[p.c], x - d/2, p.y - d/2, d, d);
+      }
+      break;
+    }
+    case 'estrellas': {
+      const sp = ambSprite('estrella', [235,240,255], true);
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of amb.parts){
+        ctx.globalAlpha = Math.min(1, (.3 + .7 * (.5 + .5 * Math.sin(t * p.sp + p.ph))) * kA);
+        const d = p.r * 6;
+        ctx.drawImage(sp, p.x - d/2, p.y - d/2, d, d);
+      }
+      const ex = amb.extra;
+      ex.prox -= dt;
+      if (!ex.fugaz && ex.prox <= 0){
+        ex.fugaz = { x:R(.1,.8)*w, y:R(.05,.4)*h, vx:R(700,1100)*sc, vy:R(180,320)*sc, vida:R(.6,1.1), edad:0 };
+        ex.prox = R(6, 15);
+      }
+      if (ex.fugaz){
+        const f = ex.fugaz; f.edad += dt; f.x += f.vx * dt; f.y += f.vy * dt;
+        const a = Math.sin(Math.PI * Math.min(1, f.edad / f.vida));
+        const lx = f.x - f.vx * .18, ly = f.y - f.vy * .18;
+        const gr = ctx.createLinearGradient(lx, ly, f.x, f.y);
+        gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, `rgba(255,255,255,${.8 * a})`);
+        ctx.globalAlpha = 1; ctx.strokeStyle = gr; ctx.lineWidth = 2 * sc; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(f.x, f.y); ctx.stroke();
+        if (f.edad >= f.vida) ex.fugaz = null;
+      }
+      break;
+    }
+    case 'niebla': {
+      const sp = ambSprite('niebla', [205,210,222]);
+      ctx.globalCompositeOperation = 'source-over';
+      for (const p of amb.parts){
+        p.x += p.vx * dt;
+        if (p.vx > 0 && p.x - p.r > w) p.x = -p.r; else if (p.vx < 0 && p.x + p.r < 0) p.x = w + p.r;
+        ctx.globalAlpha = Math.min(.35, p.a * kA * (.75 + .25 * Math.sin(t * .2 + p.ph)));
+        ctx.drawImage(sp, p.x - p.r, p.y - p.r * .55, p.r * 2, p.r * 1.1);
+      }
+      break;
+    }
+    case 'lluvia': {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.lineWidth = 1.3 * sc; ctx.lineCap = 'round';
+      for (const p of amb.parts){
+        p.y += p.v * dt; p.x += p.v * .12 * dt;
+        if (p.y - p.l > h){ p.y = -R(0, 60); p.x = R(-.1, 1) * w; }
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = `rgba(205,220,240,${Math.min(.5, p.a * kA)})`;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.l * .12, p.y - p.l); ctx.stroke();
+      }
+      break;
+    }
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+
+function ambLoop(ts){
+  const cv = document.getElementById('projector-ambiente');
+  if (!cv || amb.nombre === 'ninguno'){ amb.raf = 0; return; }
+  amb.raf = requestAnimationFrame(ambLoop);
+  const dt = Math.min(.05, amb.last ? (ts - amb.last) / 1000 : 0); amb.last = ts; amb.t += dt;
+  if (cv.offsetParent === null && getComputedStyle(cv).display === 'none') return; // oculto (versículo / medio)
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  if (w !== amb.w || h !== amb.h){ cv.width = amb.w = w; cv.height = amb.h = h; ambCrear(); }
+  ambDibujar(cv.getContext('2d'), dt);
+}
+
+function aplicarAmbienteProy(nombre, intensidad){
+  const cv = document.getElementById('projector-ambiente');
+  if (!cv) return;
+  if (typeof intensidad === 'number' && !isNaN(intensidad)) amb.k = intensidad;
+  if (!AMBIENTES.some(a => a.id === nombre)) nombre = 'ninguno';
+  amb.nombre = nombre;
+  cv.classList.toggle('on', nombre !== 'ninguno');
+  if (nombre === 'ninguno'){ cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); return; }
+  amb.w = 0;   // fuerza a recrear partículas con el tamaño actual
+  if (!amb.raf){ amb.last = 0; amb.raf = requestAnimationFrame(ambLoop); }
+}
+
+function cambioAmbienteGeneral(){
+  const sg = songs.find(s => s.id === currentSongId);
+  if (!sg || !sg.ambiente) setAmbiente(ambienteGeneral());
+}
+
 /* =========================================================================
    NÚCLEO UNIFICADO: pestañas, pantalla negra, canal, teclado y arranque
    ========================================================================= */
@@ -4216,11 +4540,12 @@ function goToProjector(){
   if (estiloGuardado) aplicarEstiloEnProyector(estiloGuardado);
   // Modo de una sola ventana: repetir lo último que se envió
   if (ultimaProyeccion){
-    if (ultimaProyeccion.type === 'line') renderProjectorLine(ultimaProyeccion.text);
+    if (ultimaProyeccion.type === 'line') renderProjectorLine(ultimaProyeccion.text, ultimaProyeccion.next);
     else if (ultimaProyeccion.type === 'media') renderProjectorMedia(ultimaProyeccion.item, ultimaProyeccion.opts);
     else renderProjectorVerse(ultimaProyeccion.text, ultimaProyeccion.ref);
   }
   aplicarNegroVisual();
+  aplicarAmbienteProy(ambienteActual, (estiloGuardado || {}).ambIntensidad);
   // Pide al panel de operador (si hay otra ventana) el estado de la pantalla negra
   getChannel().postMessage({ type:'hello' });
 }
@@ -4282,7 +4607,8 @@ function iniciarCanal(){
   ch.onmessage = (ev) => {
     const d = ev.data;
     if (!d) return;
-    if (d.type === 'line')        renderProjectorLine(d.text);
+    if (d.type === 'line')        renderProjectorLine(d.text, d.next);
+    else if (d.type === 'ambiente') aplicarAmbienteProy(d.nombre);
     else if (d.type === 'verse')  renderProjectorVerse(d.text, d.ref);
     else if (d.type === 'style')  aplicarEstiloEnProyector(d.estilo);
     else if (d.type === 'media')  renderProjectorMedia(d.item, d.opts);
@@ -4295,6 +4621,7 @@ function iniciarCanal(){
       ch.postMessage({ type:'black', on: negroActivo });
       // Si la proyección se abrió tarde, le reenviamos lo que está en pantalla
       if (ultimaProyeccion) ch.postMessage(ultimaProyeccion);
+      ch.postMessage({ type:'ambiente', nombre: ambienteActual });
     }
   };
 }
@@ -4320,6 +4647,7 @@ document.addEventListener('keydown', (e) => {
     else if (e.code === 'ArrowLeft'){ e.preventDefault(); stepLine(-1); }
     else if (e.code === 'PageDown'){ e.preventDefault(); goToSongInSet(1); }
     else if (e.code === 'PageUp'){ e.preventDefault(); goToSongInSet(-1); }
+    else if (/^Digit[0-5]$/.test(e.code)){ e.preventDefault(); setAmbiente(AMBIENTES[+e.code.slice(5)].id); }
   } else if (tabActual === 'biblia'){
     if (e.code === 'ArrowRight'){ e.preventDefault(); moverVersiculo(1); }
     else if (e.code === 'ArrowLeft'){ e.preventDefault(); moverVersiculo(-1); }
@@ -4347,6 +4675,7 @@ window.addEventListener('load', async () => {
     return;   // la ventana de proyección NO se conecta al WebSocket (evita comandos duplicados)
   }
 
+  ambienteActual = ambienteGeneral();   // el ambiente general vale desde el inicio, no solo al elegir canción
   conectarWS();        // control remoto desde celular (solo en red local, solo el operador)
   conectarWSBiblia();
   cargarMediosRepo();
